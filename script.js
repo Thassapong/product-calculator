@@ -25,10 +25,10 @@ function addRow() {
         ${selectHTML}
       </select>
     </td>
-    <td><input type="number" value="1" min="1"></td>
-    <td><input type="number" value="0" min="0" max="100"></td>
-    <td><input type="number" value="0" min="0" max="100"></td>
-    <td><input type="number" value="0" min="0" max="100"></td>
+    <td><input type="number" value="1" min="1" oninput="calculateTotal()"></td>
+    <td><input type="number" value="0" min="0" max="100" oninput="calculateTotal()"></td>
+    <td><input type="number" value="0" min="0" max="100" oninput="calculateTotal()"></td>
+    <td><input type="number" value="0" min="0" max="100" oninput="calculateTotal()"></td>
     <td><input type="text" readonly></td>
     <td><button onclick="removeRow(this)">❌</button></td>
   `;
@@ -45,10 +45,12 @@ function updatePrice(selectElement) {
   } else {
     row.cells[5].querySelector("input").value = "";
   }
+  calculateTotal(); // คำนวณใหม่เมื่อเลือกสินค้า
 }
 
 function removeRow(btn) {
   btn.closest("tr").remove();
+  calculateTotal(); // คำนวณใหม่เมื่อมีการลบแถว
 }
 
 function calculateTotal() {
@@ -64,7 +66,9 @@ function calculateTotal() {
 
     const discountFactor = (1 - d1 / 100) * (1 - d2 / 100) * (1 - d3 / 100);
     const finalPrice = price * discountFactor;
-    total += qty * finalPrice;
+    const totalRow = qty * finalPrice;
+
+    total += totalRow;
   });
 
   document.getElementById("totalPrice").innerText = total.toFixed(2);
@@ -92,9 +96,11 @@ function downloadCSV() {
     csv += `${name},${qty},${d1},${d2},${d3},${price},${finalPrice.toFixed(2)},${total.toFixed(2)}\n`;
   });
 
-  csv += `\nราคารวม,,${document.getElementById("totalPrice").innerText} บาท`;
+  csv += `\nราคารวม,,,,,,,${document.getElementById("totalPrice").innerText} บาท`;
 
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  // ใส่ BOM (UTF-8 with BOM) เพื่อรองรับภาษาไทยใน Excel
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = "ใบเสนอราคา.csv";
