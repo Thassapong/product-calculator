@@ -74,12 +74,22 @@ function calculateTotal() {
   document.getElementById("totalPrice").innerText = total.toFixed(2);
 }
 
-function downloadCSV() {
-  const rows = document.querySelectorAll("#productTable tbody tr");
-  let csv = "วันที่,ชื่อลูกค้า,หมายเหตุ\n";
-  csv += `${document.getElementById("todayDate").innerText},${document.getElementById("customerName").value},${document.getElementById("note").value}\n\n`;
+function downloadXLSX() {
+  const ws_data = [];
+  const date = document.getElementById("todayDate").innerText;
+  const customer = document.getElementById("customerName").value;
+  const note = document.getElementById("note").value;
 
-  csv += "สินค้า,จำนวน,ส่วนลด1,ส่วนลด2,ส่วนลด3,ราคาต่อหน่วย,ราคาหลังลด,รวม\n";
+  // ข้อมูลหัวตาราง
+  ws_data.push(["วันที่", "ชื่อลูกค้า", "หมายเหตุ"]);
+  ws_data.push([date, customer, note]);
+  ws_data.push([]);
+
+  // หัวตารางสินค้า
+  ws_data.push(["สินค้า", "จำนวน", "ส่วนลด1", "ส่วนลด2", "ส่วนลด3", "ราคาต่อหน่วย", "ราคาหลังลด", "รวม"]);
+
+  const rows = document.querySelectorAll("#productTable tbody tr");
+  let total = 0;
 
   rows.forEach(row => {
     const name = row.cells[0].querySelector("select").value;
@@ -91,18 +101,20 @@ function downloadCSV() {
 
     const discountFactor = (1 - d1 / 100) * (1 - d2 / 100) * (1 - d3 / 100);
     const finalPrice = price * discountFactor;
-    const total = qty * finalPrice;
+    const totalRow = qty * finalPrice;
+    total += totalRow;
 
-    csv += `${name},${qty},${d1},${d2},${d3},${price},${finalPrice.toFixed(2)},${total.toFixed(2)}\n`;
+    ws_data.push([name, qty, d1, d2, d3, price, finalPrice.toFixed(2), totalRow.toFixed(2)]);
   });
 
-  csv += `\nราคารวม,,,,,,,${document.getElementById("totalPrice").innerText} บาท`;
+  ws_data.push([]);
+  ws_data.push(["รวมทั้งสิ้น", "", "", "", "", "", "", total.toFixed(2) + " บาท"]);
 
-  // ใส่ BOM (UTF-8 with BOM) เพื่อรองรับภาษาไทยใน Excel
-  const BOM = "\uFEFF";
-  const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "ใบเสนอราคา.csv";
-  link.click();
+  // สร้างไฟล์ Excel
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "ใบเสนอราคา");
+
+  XLSX.writeFile(wb, "ใบเสนอราคา.xlsx");
 }
+
