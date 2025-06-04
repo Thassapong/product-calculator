@@ -1,13 +1,15 @@
 let products = [];
 
-window.onload = function () {
+window.onload = async function () {
   document.getElementById("todayDate").innerText = new Date().toLocaleDateString("th-TH");
-  fetch("products.json")
-    .then(res => res.json())
-    .then(data => {
-      products = data;
-      addRow(); // เพิ่มแถวแรกเลย
-    });
+
+  try {
+    const res = await fetch("products.json");
+    products = await res.json();
+    addRow(); // เพิ่มแถวแรกหลังจากโหลดสินค้าเสร็จ
+  } catch (error) {
+    alert("ไม่สามารถโหลดรายการสินค้าได้");
+  }
 };
 
 function addRow() {
