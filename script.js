@@ -75,46 +75,61 @@ function calculateTotal() {
 }
 
 function downloadXLSX() {
-  const ws_data = [];
-  const date = document.getElementById("todayDate").innerText;
-  const customer = document.getElementById("customerName").value;
-  const note = document.getElementById("note").value;
+  const wb = XLSX.utils.book_new();
 
-  // ข้อมูลหัวตาราง
-  ws_data.push(["วันที่", "ชื่อลูกค้า", "หมายเหตุ"]);
-  ws_data.push([date, customer, note]);
-  ws_data.push([]);
+  const customerSections = document.querySelectorAll(".customer-section");
 
-  // หัวตารางสินค้า
-  ws_data.push(["สินค้า", "จำนวน", "ส่วนลด1", "ส่วนลด2", "ส่วนลด3", "ราคาต่อหน่วย", "ราคาหลังลด", "รวม"]);
+  customerSections.forEach((section, index) => {
+    const date = new Date();
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yy = (date.getFullYear() + 543).toString().slice(-2); // พ.ศ.
 
-  const rows = document.querySelectorAll("#productTable tbody tr");
-  let total = 0;
+    const customer = section.querySelector(".customer-name").value || `ลูกค้า${index + 1}`;
+    const note = section.querySelector(".customer-note").value || "";
 
-  rows.forEach(row => {
-    const name = row.cells[0].querySelector("select").value;
-    const qty = parseFloat(row.cells[1].querySelector("input").value) || 0;
-    const d1 = parseFloat(row.cells[2].querySelector("input").value) || 0;
-    const d2 = parseFloat(row.cells[3].querySelector("input").value) || 0;
-    const d3 = parseFloat(row.cells[4].querySelector("input").value) || 0;
-    const price = parseFloat(row.cells[5].querySelector("input").value) || 0;
+    const ws_data = [];
+    ws_data.push(["วันที่", "ชื่อลูกค้า", "หมายเหตุ"]);
+    ws_data.push([`${dd}/${mm}/${yy}`, customer, note]);
+    ws_data.push([]);
+    ws_data.push(["สินค้า", "จำนวน", "ส่วนลด1", "ส่วนลด2", "ส่วนลด3", "ราคาต่อหน่วย", "ราคาหลังลด", "รวม"]);
 
-    const discountFactor = (1 - d1 / 100) * (1 - d2 / 100) * (1 - d3 / 100);
-    const finalPrice = price * discountFactor;
-    const totalRow = qty * finalPrice;
-    total += totalRow;
+    let total = 0;
 
-    ws_data.push([name, qty, d1, d2, d3, price, finalPrice.toFixed(2), totalRow.toFixed(2)]);
+    const rows = section.querySelectorAll("tbody tr");
+
+    rows.forEach(row => {
+      const name = row.cells[0].querySelector("select").value;
+      const qty = parseFloat(row.cells[1].querySelector("input").value) || 0;
+      const d1 = parseFloat(row.cells[2].querySelector("input").value) || 0;
+      const d2 = parseFloat(row.cells[3].querySelector("input").value) || 0;
+      const d3 = parseFloat(row.cells[4].querySelector("input").value) || 0;
+      const price = parseFloat(row.cells[5].querySelector("input").value) || 0;
+
+      const discountFactor = (1 - d1 / 100) * (1 - d2 / 100) * (1 - d3 / 100);
+      const finalPrice = price * discountFactor;
+      const totalRow = qty * finalPrice;
+      total += totalRow;
+
+      ws_data.push([name, qty, d1, d2, d3, price, finalPrice.toFixed(2), totalRow.toFixed(2)]);
+    });
+
+    ws_data.push([]);
+    ws_data.push(["รวมทั้งสิ้น", "", "", "", "", "", "", total.toFixed(2) + " บาท"]);
+
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+    const sheetName = customer.length > 31 ? customer.slice(0, 31) : customer;
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
   });
 
-  ws_data.push([]);
-  ws_data.push(["รวมทั้งสิ้น", "", "", "", "", "", "", total.toFixed(2) + " บาท"]);
+  // สร้างชื่อไฟล์: ออเดอร์ DD-MM-YY
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yy = (now.getFullYear() + 543).toString().slice(-2); // พ.ศ.
+  const filename = `ออเดอร์ ${dd}-${mm}-${yy}.xlsx`;
 
-  // สร้างไฟล์ Excel
-  const ws = XLSX.utils.aoa_to_sheet(ws_data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "ใบเสนอราคา");
-
-  XLSX.writeFile(wb, "ใบเสนอราคา.xlsx");
+  XLSX.writeFile(wb, filename);
 }
+
 
