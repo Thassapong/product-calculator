@@ -1,40 +1,18 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>คำนวณราคาสินค้า</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ใบสั่งซื้อ</title>
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-  <h1>📦 คำนวณราคาสินค้า</h1>
-  <p>📅 วันที่: <span id="todayDate"></span></p>
+  <h1>ระบบคำนวณใบสั่งซื้อ</h1>
+  <div id="customerContainer"></div>
 
-  <label>ชื่อลูกค้า: <input type="text" id="customerName"></label><br>
-  <label>หมายเหตุ: <input type="text" id="note"></label><br><br>
-
-  <table id="productTable">
-    <thead>
-      <tr>
-        <th>สินค้า</th>
-        <th>จำนวน</th>
-        <th>ส่วนลด(%)</th>
-        <th>ส่วนลดตาม 1(%)</th>
-        <th>ส่วนลดตาม 2(%)</th>
-        <th>ราคาต่อหน่วย</th>
-        <th>ลบ</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- เพิ่มรายการแบบ dynamic -->
-    </tbody>
-  </table>
-
-  <button onclick="addRow()">➕ เพิ่มรายการ</button>
-  <button onclick="calculateTotal()">💰 คำนวณ</button>
-  <button onclick="downloadXLSX()">⬇️ ดาวโหลด excel</button>
-
-  <h2>ราคารวม: <span id="totalPrice">0.00</span> บาท</h2>
+  <button onclick="addCustomer()">➕ เพิ่มลูกค้า</button>
+  <button onclick="downloadXLSX()">⬇️ ดาวน์โหลด Excel</button>
 
   <script src="script.js"></script>
 </body>
