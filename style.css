@@ -1,45 +1,33 @@
 body {
   font-family: sans-serif;
-  padding: 20px;
-  background-color: #f0f8ff;
-}
-
-.customer-section {
-  border: 2px solid #ccc;
-  padding: 15px;
-  margin-bottom: 20px;
-  background: #fff;
-  border-radius: 8px;
+  margin: 2rem;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
+  margin-top: 1rem;
 }
 
 th, td {
   border: 1px solid #ccc;
-  padding: 6px;
+  padding: 0.5rem;
   text-align: center;
 }
 
 input, select {
-  padding: 4px;
   width: 100%;
   box-sizing: border-box;
 }
 
 button {
-  margin-top: 10px;
-  padding: 8px 12px;
-  border: none;
-  background-color: #007acc;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
+  margin: 1rem 0.5rem;
 }
 
-button:hover {
-  background-color: #005fa3;
+.customer-section {
+  margin-bottom: 3rem;
+  border: 1px solid #888;
+  padding: 1rem;
+  border-radius: 8px;
+  background: #f8f8f8;
 }
