@@ -1,78 +1,104 @@
-let products = [];
+let productList = {};
 
-window.onload = async function () {
-  document.getElementById("todayDate").innerText = new Date().toLocaleDateString("th-TH");
-
+window.addEventListener("DOMContentLoaded", async () => {
   try {
     const res = await fetch("products.json");
-    products = await res.json();
-    addRow(); // เพิ่มแถวแรกหลังจากโหลดสินค้าเสร็จ
-  } catch (error) {
-    alert("ไม่สามารถโหลดรายการสินค้าได้");
+    productList = await res.json();
+    addCustomer(); // เพิ่มลูกค้าแรกหลังโหลดสินค้าเสร็จ
+  } catch (err) {
+    alert("โหลดรายการสินค้าไม่สำเร็จ");
+    console.error(err);
   }
-};
+});
 
-function addRow() {
-  const table = document.querySelector("#productTable tbody");
-  const row = document.createElement("tr");
+function addCustomer() {
+  const container = document.getElementById("customerContainer");
 
-  const selectHTML = products.map(p => `<option value="${p.name}">${p.name}</option>`).join("");
+  const div = document.createElement("div");
+  div.className = "customer-section";
 
-  row.innerHTML = `
-    <td>
-      <select onchange="updatePrice(this)">
-        <option value="">-- เลือกสินค้า --</option>
-        ${selectHTML}
-      </select>
-    </td>
-    <td><input type="number" value="1" min="1" oninput="calculateTotal()"></td>
-    <td><input type="number" value="0" min="0" max="100" oninput="calculateTotal()"></td>
-    <td><input type="number" value="0" min="0" max="100" oninput="calculateTotal()"></td>
-    <td><input type="number" value="0" min="0" max="100" oninput="calculateTotal()"></td>
-    <td><input type="text" readonly></td>
+  div.innerHTML = `
+    <h2>ลูกค้าใหม่</h2>
+    <input class="customer-name" placeholder="ชื่อลูกค้า" />
+    <input class="customer-note" placeholder="หมายเหตุ" />
+    <table>
+      <thead>
+        <tr>
+          <th>สินค้า</th>
+          <th>จำนวน</th>
+          <th>ส่วนลด 1 (%)</th>
+          <th>ส่วนลด 2 (%)</th>
+          <th>ส่วนลด 3 (%)</th>
+          <th>ราคาต่อหน่วย</th>
+          <th>ราคาหลังลด</th>
+          <th>รวม</th>
+          <th>ลบ</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="addRow(this)">➕ เพิ่มสินค้า</button>
+  `;
+
+  container.appendChild(div);
+  addRow(div.querySelector("button"));
+}
+
+function addRow(button) {
+  const tbody = button.closest(".customer-section").querySelector("tbody");
+  const tr = document.createElement("tr");
+
+  const options = Object.keys(productList)
+    .map(p => `<option value="${p}">${p}</option>`)
+    .join("");
+
+  const firstProduct = Object.keys(productList)[0];
+  const firstPrice = productList[firstProduct] || 0;
+
+  tr.innerHTML = `
+    <td><select onchange="updatePrice(this)">${options}</select></td>
+    <td><input type="number" value="1" oninput="calcRow(this)" /></td>
+    <td><input type="number" value="0" oninput="calcRow(this)" /></td>
+    <td><input type="number" value="0" oninput="calcRow(this)" /></td>
+    <td><input type="number" value="0" oninput="calcRow(this)" /></td>
+    <td><input type="number" value="${firstPrice}" readonly /></td>
+    <td><input type="number" value="${firstPrice}" readonly /></td>
+    <td><input type="number" value="${firstPrice}" readonly /></td>
     <td><button onclick="removeRow(this)">❌</button></td>
   `;
 
-  table.appendChild(row);
+  tbody.appendChild(tr);
 }
 
-function updatePrice(selectElement) {
-  const productName = selectElement.value;
-  const product = products.find(p => p.name === productName);
-  const row = selectElement.closest("tr");
-  if (product) {
-    row.cells[5].querySelector("input").value = product.price;
-  } else {
-    row.cells[5].querySelector("input").value = "";
-  }
-  calculateTotal(); // คำนวณใหม่เมื่อเลือกสินค้า
+function updatePrice(select) {
+  const row = select.closest("tr");
+  const price = productList[select.value] || 0;
+  row.cells[5].querySelector("input").value = price;
+  calcRow(select);
+}
+
+function calcRow(input) {
+  const row = input.closest("tr");
+  const qty = parseFloat(row.cells[1].querySelector("input").value) || 0;
+  const d1 = parseFloat(row.cells[2].querySelector("input").value) || 0;
+  const d2 = parseFloat(row.cells[3].querySelector("input").value) || 0;
+  const d3 = parseFloat(row.cells[4].querySelector("input").value) || 0;
+  const price = parseFloat(row.cells[5].querySelector("input").value) || 0;
+
+  const discountFactor = (1 - d1 / 100) * (1 - d2 / 100) * (1 - d3 / 100);
+  const finalPrice = price * discountFactor;
+  const total = qty * finalPrice;
+
+  row.cells[6].querySelector("input").value = finalPrice.toFixed(2);
+  row.cells[7].querySelector("input").value = total.toFixed(2);
 }
 
 function removeRow(btn) {
   btn.closest("tr").remove();
-  calculateTotal(); // คำนวณใหม่เมื่อมีการลบแถว
 }
 
-function calculateTotal() {
-  const rows = document.querySelectorAll("#productTable tbody tr");
-  let total = 0;
+// (ส่วนฟังก์ชัน downloadXLSX คงเดิมเหมือนเดิม ไม่ต้องแก้ไข)
 
-  rows.forEach(row => {
-    const qty = parseFloat(row.cells[1].querySelector("input").value) || 0;
-    const d1 = parseFloat(row.cells[2].querySelector("input").value) || 0;
-    const d2 = parseFloat(row.cells[3].querySelector("input").value) || 0;
-    const d3 = parseFloat(row.cells[4].querySelector("input").value) || 0;
-    const price = parseFloat(row.cells[5].querySelector("input").value) || 0;
-
-    const discountFactor = (1 - d1 / 100) * (1 - d2 / 100) * (1 - d3 / 100);
-    const finalPrice = price * discountFactor;
-    const totalRow = qty * finalPrice;
-
-    total += totalRow;
-  });
-
-  document.getElementById("totalPrice").innerText = total.toFixed(2);
-}
 
 function downloadXLSX() {
   const wb = XLSX.utils.book_new();
