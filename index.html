@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>เครื่องคำนวณราคาสินค้า</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    (function() {
+      emailjs.init("YOUR_USER_ID"); // แทนที่ด้วย User ID ของคุณจาก EmailJS
+    })();
+  </script>
+</head>
+<body>
+  <h1>คำนวณราคาสินค้า</h1>
+
+  <table id="productTable">
+    <thead>
+      <tr>
+        <th>สินค้า</th>
+        <th>จำนวน</th>
+        <th>ราคาต่อหน่วย</th>
+        <th>ส่วนลด (%)</th>
+        <th>ลบ</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- รายการสินค้าจะถูกเพิ่มที่นี่ -->
+    </tbody>
+  </table>
+
+  <button onclick="addRow()">➕ เพิ่มรายการ</button>
+  <button onclick="calculateTotal()">💰 คำนวณ</button>
+  <button onclick="downloadCSV()">⬇️ บันทึก CSV</button><br><br>
+
+  <input type="email" id="emailInput" placeholder="กรอกอีเมลผู้รับ">
+  <button onclick="sendCSVByEmail()">📧 ส่งทางอีเมล</button>
+
+  <h2>ราคารวม: <span id="totalPrice">0.00</span> บาท</h2>
+
+  <script src="script.js"></script>
+</body>
+</html>
