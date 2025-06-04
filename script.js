@@ -135,36 +135,60 @@ function downloadXLSX() {
   const wb = XLSX.utils.book_new();
   const dateStr = getThaiDateString();
   const fileName = `ออเดอร์ ${dateStr}.xlsx`;
-
   const customers = document.querySelectorAll(".customer-section");
 
   customers.forEach((section, index) => {
     const name = section.querySelector(".customer-name").value || `ลูกค้า ${index + 1}`;
     const note = section.querySelector(".customer-note").value || "";
-    const total = section.querySelector(".customer-total").innerText;
+    const rows = [];
 
-    const rows = Array.from(section.querySelectorAll("tbody tr")).map(tr => {
-      return {
-        "สินค้า": tr.cells[0].querySelector("input").value,
-        "จำนวน": tr.cells[1].querySelector("input").value,
-        "หน่วย": tr.cells[2].innerText,
-        "ราคาต่อหน่วย": tr.cells[6].querySelector("input").value,
-        "ส่วนลด(%)":
-          tr.cells[3].querySelector("input").value ||
-          tr.cells[4].querySelector("input").value ||
-          tr.cells[5].querySelector("input").value,
-        "ราคาหลังลด": tr.cells[7].querySelector("input").value,
-        "รวม": tr.cells[8].querySelector("input").value
-      };
+    // 🔹 Row 1: วันที่
+    rows.push([dateStr]);
+    // 🔹 Row 2: ชื่อลูกค้า
+    rows.push([`ลูกค้า: ${name}`]);
+    // 🔹 Row 3: หมายเหตุ
+    rows.push([`หมายเหตุ: ${note}`]);
+
+    // 🔹 Row 4: หัวตาราง
+    const headers = [
+      "สินค้า", "จำนวน", "หน่วย", "ราคาต่อหน่วย", "ส่วนลด(%)", "ราคาหลังลด", "รวม"
+    ];
+    rows.push(headers);
+
+    let sumTotal = 0;
+
+    // 🔹 รายการสินค้า
+    section.querySelectorAll("tbody tr").forEach(tr => {
+      const discountParts = [
+        tr.cells[3].querySelector("input").value,
+        tr.cells[4].querySelector("input").value,
+        tr.cells[5].querySelector("input").value
+      ].filter(p => parseFloat(p) > 0);
+
+      const discountText = discountParts.map(p => `${p}%`).join("");
+
+      const total = parseFloat(tr.cells[8].querySelector("input").value) || 0;
+      sumTotal += total;
+
+      rows.push([
+        tr.cells[0].querySelector("select").value,
+        tr.cells[1].querySelector("input").value,
+        tr.cells[2].innerText,
+        tr.cells[6].querySelector("input").value,
+        discountText,
+        tr.cells[7].querySelector("input").value,
+        tr.cells[8].querySelector("input").value
+      ]);
     });
 
-    rows.unshift({ "สินค้า": `หมายเหตุ: ${note}` });
-    rows.unshift({ "สินค้า": `ลูกค้า: ${name}` });
-    rows.push({ "สินค้า": `รวมทั้งสิ้น: ${total} บาท` });
+    // 🔹 บรรทัดสุดท้าย: รวมทั้งหมด
+    rows.push(["", "", "", "", "", "รวมทั้งหมด", sumTotal.toFixed(2)]);
 
-    const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
+    // 🔹 แปลงเป็น worksheet และเพิ่มเข้า workbook
+    const ws = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, ws, name.substring(0, 30));
   });
 
   XLSX.writeFile(wb, fileName);
 }
+
