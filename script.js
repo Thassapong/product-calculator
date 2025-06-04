@@ -52,9 +52,9 @@ function addCustomer() {
           <th>สินค้า</th>
           <th>จำนวน</th>
           <th>หน่วย</th>
-          <th>ส่วนลด 1 (%)</th>
-          <th>ส่วนลด 2 (%)</th>
-          <th>ส่วนลด 3 (%)</th>
+          <th>ส่วนลด(%)</th>
+          <th>ส่วนลดตาม 1(%)</th>
+          <th>ส่วนลดตาม 2(%)</th>
           <th>ราคาต่อหน่วย</th>
           <th>ราคาหลังลด</th>
           <th>รวม</th>
@@ -63,6 +63,7 @@ function addCustomer() {
       </thead>
       <tbody></tbody>
     </table>
+    <p><strong>ราคารวมทั้งหมด: <span class="customer-total">0.00</span> บาท</strong></p>
     <button onclick="addRow(this)">➕ เพิ่มสินค้า</button>
   `;
 
@@ -90,6 +91,7 @@ function addRow(button) {
   `;
 
   tbody.appendChild(tr);
+  updateCustomerTotal(tbody.closest(".customer-section"));
 }
 
 function updatePriceFromInput(input) {
@@ -116,10 +118,23 @@ function calcRow(input) {
 
   row.cells[7].querySelector("input").value = finalPrice.toFixed(2);
   row.cells[8].querySelector("input").value = total.toFixed(2);
+
+  updateCustomerTotal(row.closest(".customer-section"));
+}
+
+function updateCustomerTotal(section) {
+  let sum = 0;
+  section.querySelectorAll("tbody tr").forEach(tr => {
+    const total = parseFloat(tr.cells[8].querySelector("input").value) || 0;
+    sum += total;
+  });
+  section.querySelector(".customer-total").innerText = sum.toFixed(2);
 }
 
 function removeRow(btn) {
+  const section = btn.closest(".customer-section");
   btn.closest("tr").remove();
+  updateCustomerTotal(section);
 }
 
 function downloadXLSX() {
@@ -133,8 +148,8 @@ function downloadXLSX() {
     const note = section.querySelector(".customer-note").value || "";
     const rows = [];
 
-    // บรรทัดที่ 1: วันที่
-    rows.push([dateStr]);
+    // ✅ บรรทัดที่ 1: วันที่
+    rows.push([`วันที่ ${dateStr}`]);
 
     // บรรทัดที่ 2: ชื่อลูกค้า
     rows.push([`ลูกค้า: ${name}`]);
@@ -173,7 +188,7 @@ function downloadXLSX() {
       ]);
     });
 
-    // บรรทัดสุดท้าย: รวมทั้งหมด
+    // ✅ บรรทัดสุดท้าย: รวมทั้งหมด
     rows.push(["", "", "", "", "", "รวมทั้งหมด", sumTotal.toFixed(2)]);
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
