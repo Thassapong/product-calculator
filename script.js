@@ -4,12 +4,21 @@ window.addEventListener("DOMContentLoaded", async () => {
   try {
     const res = await fetch("products.json");
     productList = await res.json();
-    addCustomer(); // เพิ่มลูกค้าแรกหลังโหลดสินค้าเสร็จ
+    addCustomer();
+    document.getElementById("currentDate").innerText = getThaiDateString();
   } catch (err) {
     alert("โหลดรายการสินค้าไม่สำเร็จ");
     console.error(err);
   }
 });
+
+function getThaiDateString() {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear() + 543;
+  return `${day}-${month}-${year.toString().slice(-2)}`;
+}
 
 function addCustomer() {
   const container = document.getElementById("customerContainer");
@@ -26,6 +35,7 @@ function addCustomer() {
         <tr>
           <th>สินค้า</th>
           <th>จำนวน</th>
+          <th>หน่วย</th>
           <th>ส่วนลด 1 (%)</th>
           <th>ส่วนลด 2 (%)</th>
           <th>ส่วนลด 3 (%)</th>
@@ -49,21 +59,22 @@ function addRow(button) {
   const tr = document.createElement("tr");
 
   const options = Object.keys(productList)
-    .map(p => `<option value="${p}">${p}</option>`)
+    .map(name => `<option value="${name}">${name}</option>`)
     .join("");
 
   const firstProduct = Object.keys(productList)[0];
-  const firstPrice = productList[firstProduct] || 0;
+  const { price = 0, unit = "" } = productList[firstProduct];
 
   tr.innerHTML = `
     <td><select onchange="updatePrice(this)">${options}</select></td>
     <td><input type="number" value="1" oninput="calcRow(this)" /></td>
+    <td class="unit-cell">${unit}</td>
     <td><input type="number" value="0" oninput="calcRow(this)" /></td>
     <td><input type="number" value="0" oninput="calcRow(this)" /></td>
     <td><input type="number" value="0" oninput="calcRow(this)" /></td>
-    <td><input type="number" value="${firstPrice}" readonly /></td>
-    <td><input type="number" value="${firstPrice}" readonly /></td>
-    <td><input type="number" value="${firstPrice}" readonly /></td>
+    <td><input type="number" value="${price}" readonly /></td>
+    <td><input type="number" value="${price}" readonly /></td>
+    <td><input type="number" value="${price}" readonly /></td>
     <td><button onclick="removeRow(this)">❌</button></td>
   `;
 
@@ -72,90 +83,65 @@ function addRow(button) {
 
 function updatePrice(select) {
   const row = select.closest("tr");
-  const price = productList[select.value] || 0;
-  row.cells[5].querySelector("input").value = price;
+  const selected = select.value;
+  const data = productList[selected] || { price: 0, unit: "" };
+
+  row.cells[2].innerText = data.unit || "";
+  row.cells[6].querySelector("input").value = data.price || 0;
   calcRow(select);
 }
 
 function calcRow(input) {
   const row = input.closest("tr");
   const qty = parseFloat(row.cells[1].querySelector("input").value) || 0;
-  const d1 = parseFloat(row.cells[2].querySelector("input").value) || 0;
-  const d2 = parseFloat(row.cells[3].querySelector("input").value) || 0;
-  const d3 = parseFloat(row.cells[4].querySelector("input").value) || 0;
-  const price = parseFloat(row.cells[5].querySelector("input").value) || 0;
+  const d1 = parseFloat(row.cells[3].querySelector("input").value) || 0;
+  const d2 = parseFloat(row.cells[4].querySelector("input").value) || 0;
+  const d3 = parseFloat(row.cells[5].querySelector("input").value) || 0;
+  const price = parseFloat(row.cells[6].querySelector("input").value) || 0;
 
   const discountFactor = (1 - d1 / 100) * (1 - d2 / 100) * (1 - d3 / 100);
   const finalPrice = price * discountFactor;
   const total = qty * finalPrice;
 
-  row.cells[6].querySelector("input").value = finalPrice.toFixed(2);
-  row.cells[7].querySelector("input").value = total.toFixed(2);
+  row.cells[7].querySelector("input").value = finalPrice.toFixed(2);
+  row.cells[8].querySelector("input").value = total.toFixed(2);
 }
 
 function removeRow(btn) {
   btn.closest("tr").remove();
 }
 
-// (ส่วนฟังก์ชัน downloadXLSX คงเดิมเหมือนเดิม ไม่ต้องแก้ไข)
-
-
 function downloadXLSX() {
   const wb = XLSX.utils.book_new();
+  const now = new Date();
+  const dateStr = getThaiDateString();
+  const fileName = `ออเดอร์ ${dateStr}.xlsx`;
 
-  const customerSections = document.querySelectorAll(".customer-section");
+  const customers = document.querySelectorAll(".customer-section");
 
-  customerSections.forEach((section, index) => {
-    const date = new Date();
-    const dd = String(date.getDate()).padStart(2, '0');
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const yy = (date.getFullYear() + 543).toString().slice(-2); // พ.ศ.
-
-    const customer = section.querySelector(".customer-name").value || `ลูกค้า${index + 1}`;
+  customers.forEach((section, index) => {
+    const name = section.querySelector(".customer-name").value || `ลูกค้า ${index + 1}`;
     const note = section.querySelector(".customer-note").value || "";
-
-    const ws_data = [];
-    ws_data.push(["วันที่", "ชื่อลูกค้า", "หมายเหตุ"]);
-    ws_data.push([`${dd}/${mm}/${yy}`, customer, note]);
-    ws_data.push([]);
-    ws_data.push(["สินค้า", "จำนวน", "ส่วนลด1", "ส่วนลด2", "ส่วนลด3", "ราคาต่อหน่วย", "ราคาหลังลด", "รวม"]);
-
-    let total = 0;
-
-    const rows = section.querySelectorAll("tbody tr");
-
-    rows.forEach(row => {
-      const name = row.cells[0].querySelector("select").value;
-      const qty = parseFloat(row.cells[1].querySelector("input").value) || 0;
-      const d1 = parseFloat(row.cells[2].querySelector("input").value) || 0;
-      const d2 = parseFloat(row.cells[3].querySelector("input").value) || 0;
-      const d3 = parseFloat(row.cells[4].querySelector("input").value) || 0;
-      const price = parseFloat(row.cells[5].querySelector("input").value) || 0;
-
-      const discountFactor = (1 - d1 / 100) * (1 - d2 / 100) * (1 - d3 / 100);
-      const finalPrice = price * discountFactor;
-      const totalRow = qty * finalPrice;
-      total += totalRow;
-
-      ws_data.push([name, qty, d1, d2, d3, price, finalPrice.toFixed(2), totalRow.toFixed(2)]);
+    const rows = Array.from(section.querySelectorAll("tbody tr")).map(tr => {
+      return {
+        "สินค้า": tr.cells[0].querySelector("select").value,
+        "จำนวน": tr.cells[1].querySelector("input").value,
+        "หน่วย": tr.cells[2].innerText,
+        "ส่วนลด 1 (%)": tr.cells[3].querySelector("input").value,
+        "ส่วนลด 2 (%)": tr.cells[4].querySelector("input").value,
+        "ส่วนลด 3 (%)": tr.cells[5].querySelector("input").value,
+        "ราคาต่อหน่วย": tr.cells[6].querySelector("input").value,
+        "ราคาหลังลด": tr.cells[7].querySelector("input").value,
+        "รวม": tr.cells[8].querySelector("input").value
+      };
     });
 
-    ws_data.push([]);
-    ws_data.push(["รวมทั้งสิ้น", "", "", "", "", "", "", total.toFixed(2) + " บาท"]);
+    rows.unshift({ "สินค้า": `หมายเหตุ: ${note}` });
+    rows.unshift({ "สินค้า": `ลูกค้า: ${name}` });
 
-    const ws = XLSX.utils.aoa_to_sheet(ws_data);
-    const sheetName = customer.length > 31 ? customer.slice(0, 31) : customer;
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
+    XLSX.utils.book_append_sheet(wb, ws, name.substring(0, 30));
   });
 
-  // สร้างชื่อไฟล์: ออเดอร์ DD-MM-YY
-  const now = new Date();
-  const dd = String(now.getDate()).padStart(2, '0');
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const yy = (now.getFullYear() + 543).toString().slice(-2); // พ.ศ.
-  const filename = `ออเดอร์ ${dd}-${mm}-${yy}.xlsx`;
-
-  XLSX.writeFile(wb, filename);
+  XLSX.writeFile(wb, fileName);
 }
-
-
