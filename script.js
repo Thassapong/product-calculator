@@ -47,6 +47,7 @@ function addCustomer() {
       </thead>
       <tbody></tbody>
     </table>
+    <p><strong>ราคารวมทั้งหมด: <span id="grandTotalLabel">0.00</span> บาท</strong></p>
     <button onclick="addRow(this)">➕ เพิ่มสินค้า</button>
   `;
 
