@@ -2,39 +2,36 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>เครื่องคำนวณราคาสินค้า</title>
+  <title>คำนวณราคาสินค้า</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
-  <script>
-    (function() {
-      emailjs.init("YOUR_USER_ID"); // แทนที่ด้วย User ID ของคุณจาก EmailJS
-    })();
-  </script>
 </head>
 <body>
-  <h1>คำนวณราคาสินค้า</h1>
+  <h1>📦 คำนวณราคาสินค้า</h1>
+  <p>📅 วันที่: <span id="todayDate"></span></p>
+
+  <label>ชื่อลูกค้า: <input type="text" id="customerName"></label><br>
+  <label>หมายเหตุ: <input type="text" id="note"></label><br><br>
 
   <table id="productTable">
     <thead>
       <tr>
         <th>สินค้า</th>
         <th>จำนวน</th>
+        <th>ส่วนลด 1 (%)</th>
+        <th>ส่วนลด 2 (%)</th>
+        <th>ส่วนลด 3 (%)</th>
         <th>ราคาต่อหน่วย</th>
-        <th>ส่วนลด (%)</th>
         <th>ลบ</th>
       </tr>
     </thead>
     <tbody>
-      <!-- รายการสินค้าจะถูกเพิ่มที่นี่ -->
+      <!-- เพิ่มรายการแบบ dynamic -->
     </tbody>
   </table>
 
   <button onclick="addRow()">➕ เพิ่มรายการ</button>
   <button onclick="calculateTotal()">💰 คำนวณ</button>
-  <button onclick="downloadCSV()">⬇️ บันทึก CSV</button><br><br>
-
-  <input type="email" id="emailInput" placeholder="กรอกอีเมลผู้รับ">
-  <button onclick="sendCSVByEmail()">📧 ส่งทางอีเมล</button>
+  <button onclick="downloadCSV()">⬇️ บันทึก CSV</button>
 
   <h2>ราคารวม: <span id="totalPrice">0.00</span> บาท</h2>
 
