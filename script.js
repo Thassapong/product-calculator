@@ -4,6 +4,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   try {
     const res = await fetch("products.json");
     productList = await res.json();
+    fillProductListDatalist();
     addCustomer();
     document.getElementById("currentDate").innerText = getThaiDateString();
   } catch (err) {
@@ -11,6 +12,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     console.error(err);
   }
 });
+
+function fillProductListDatalist() {
+  const datalist = document.getElementById("product-list");
+  datalist.innerHTML = Object.keys(productList)
+    .map(name => `<option value="${name}"></option>`)
+    .join("");
+}
 
 function getThaiDateString() {
   const now = new Date();
@@ -47,34 +55,23 @@ function addCustomer() {
       </thead>
       <tbody></tbody>
     </table>
+    <h3>ราคารวม: <span class="customer-total">0.00</span> บาท</h3>
     <button onclick="addRow(this)">➕ เพิ่มสินค้า</button>
-    <p><strong>ราคารวมทั้งหมด: </strong><span class="customer-total">0.00</span> บาท</p>
   `;
 
   container.appendChild(div);
   addRow(div.querySelector("button"));
-  updateCustomerTotal(div); // อัพเดทราคาตอนเริ่มด้วย
 }
 
 function addRow(button) {
   const tbody = button.closest(".customer-section").querySelector("tbody");
   const tr = document.createElement("tr");
 
-  // สร้าง input สำหรับค้นหาสินค้า
-  const searchInputHTML = `<input type="text" class="product-search" placeholder="ค้นหาสินค้า..." oninput="filterProductOptions(this)" style="width: 100%; box-sizing: border-box;" />`;
-
-  const options = Object.keys(productList)
-    .map(name => `<option value="${name}">${name}</option>`)
-    .join("");
-
   const firstProduct = Object.keys(productList)[0];
-  const { price = 0, unit = "" } = productList[firstProduct];
+  const { price = 0, unit = "" } = productList[firstProduct] || {};
 
   tr.innerHTML = `
-    <td>
-      ${searchInputHTML}
-      <select onchange="updatePrice(this)">${options}</select>
-    </td>
+    <td><input list="product-list" value="${firstProduct}" oninput="updatePriceInput(this)" /></td>
     <td><input type="number" value="1" oninput="calcRow(this)" /></td>
     <td class="unit-cell">${unit}</td>
     <td><input type="number" value="0" oninput="calcRow(this)" /></td>
@@ -87,35 +84,17 @@ function addRow(button) {
   `;
 
   tbody.appendChild(tr);
-  updateCustomerTotal(button.closest(".customer-section")); // อัพเดทราคาเมื่อเพิ่มแถว
+  updatePriceInput(tr.cells[0].querySelector("input"));
 }
 
-function filterProductOptions(input) {
-  const filter = input.value.toLowerCase();
-  const select = input.nextElementSibling; // select อยู่ถัดไป
-
-  Array.from(select.options).forEach(option => {
-    option.style.display = option.value.toLowerCase().includes(filter) ? "block" : "none";
-  });
-
-  // ถ้าค่าใน select ไม่อยู่ในตัวเลือกที่แสดง ให้เลือกตัวเลือกแรกที่แสดงแทน
-  const visibleOptions = Array.from(select.options).filter(opt => opt.style.display !== "none");
-  if (visibleOptions.length > 0) {
-    if (!visibleOptions.some(opt => opt.value === select.value)) {
-      select.value = visibleOptions[0].value;
-      updatePrice(select);
-    }
-  }
-}
-
-function updatePrice(select) {
-  const row = select.closest("tr");
-  const selected = select.value;
+function updatePriceInput(input) {
+  const row = input.closest("tr");
+  const selected = input.value;
   const data = productList[selected] || { price: 0, unit: "" };
 
   row.cells[2].innerText = data.unit || "";
   row.cells[6].querySelector("input").value = data.price || 0;
-  calcRow(select);
+  calcRow(input);
 }
 
 function calcRow(input) {
@@ -133,30 +112,27 @@ function calcRow(input) {
   row.cells[7].querySelector("input").value = finalPrice.toFixed(2);
   row.cells[8].querySelector("input").value = total.toFixed(2);
 
-  // อัพเดตราคารวมลูกค้า
-  const customerSection = row.closest(".customer-section");
-  updateCustomerTotal(customerSection);
-}
-
-function removeRow(btn) {
-  const customerSection = btn.closest(".customer-section");
-  btn.closest("tr").remove();
-  updateCustomerTotal(customerSection);
+  updateCustomerTotal(row.closest(".customer-section"));
 }
 
 function updateCustomerTotal(section) {
   const rows = section.querySelectorAll("tbody tr");
   let total = 0;
-  rows.forEach(tr => {
-    const sum = parseFloat(tr.cells[8].querySelector("input").value) || 0;
-    total += sum;
+  rows.forEach(row => {
+    const val = parseFloat(row.cells[8].querySelector("input").value) || 0;
+    total += val;
   });
   section.querySelector(".customer-total").innerText = total.toFixed(2);
 }
 
+function removeRow(btn) {
+  const section = btn.closest(".customer-section");
+  btn.closest("tr").remove();
+  updateCustomerTotal(section);
+}
+
 function downloadXLSX() {
   const wb = XLSX.utils.book_new();
-  const now = new Date();
   const dateStr = getThaiDateString();
   const fileName = `ออเดอร์ ${dateStr}.xlsx`;
 
@@ -165,15 +141,18 @@ function downloadXLSX() {
   customers.forEach((section, index) => {
     const name = section.querySelector(".customer-name").value || `ลูกค้า ${index + 1}`;
     const note = section.querySelector(".customer-note").value || "";
+    const total = section.querySelector(".customer-total").innerText;
+
     const rows = Array.from(section.querySelectorAll("tbody tr")).map(tr => {
       return {
-        "สินค้า": tr.cells[0].querySelector("select").value,
+        "สินค้า": tr.cells[0].querySelector("input").value,
         "จำนวน": tr.cells[1].querySelector("input").value,
         "หน่วย": tr.cells[2].innerText,
-        "ส่วนลด 1 (%)": tr.cells[3].querySelector("input").value,
-        "ส่วนลด 2 (%)": tr.cells[4].querySelector("input").value,
-        "ส่วนลด 3 (%)": tr.cells[5].querySelector("input").value,
         "ราคาต่อหน่วย": tr.cells[6].querySelector("input").value,
+        "ส่วนลด(%)":
+          tr.cells[3].querySelector("input").value ||
+          tr.cells[4].querySelector("input").value ||
+          tr.cells[5].querySelector("input").value,
         "ราคาหลังลด": tr.cells[7].querySelector("input").value,
         "รวม": tr.cells[8].querySelector("input").value
       };
@@ -181,6 +160,7 @@ function downloadXLSX() {
 
     rows.unshift({ "สินค้า": `หมายเหตุ: ${note}` });
     rows.unshift({ "สินค้า": `ลูกค้า: ${name}` });
+    rows.push({ "สินค้า": `รวมทั้งสิ้น: ${total} บาท` });
 
     const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
     XLSX.utils.book_append_sheet(wb, ws, name.substring(0, 30));
