@@ -142,14 +142,10 @@ function downloadXLSX() {
     const note = section.querySelector(".customer-note").value || "";
     const rows = [];
 
-    // 🔹 Row 1: วันที่
     rows.push([dateStr]);
-    // 🔹 Row 2: ชื่อลูกค้า
     rows.push([`ลูกค้า: ${name}`]);
-    // 🔹 Row 3: หมายเหตุ
     rows.push([`หมายเหตุ: ${note}`]);
 
-    // 🔹 Row 4: หัวตาราง
     const headers = [
       "สินค้า", "จำนวน", "หน่วย", "ราคาต่อหน่วย", "ส่วนลด(%)", "ราคาหลังลด", "รวม"
     ];
@@ -157,7 +153,7 @@ function downloadXLSX() {
 
     let sumTotal = 0;
 
-    // 🔹 รายการสินค้า
+
     section.querySelectorAll("tbody tr").forEach(tr => {
       const discountParts = [
         tr.cells[3].querySelector("input").value,
@@ -181,10 +177,7 @@ function downloadXLSX() {
       ]);
     });
 
-    // 🔹 บรรทัดสุดท้าย: รวมทั้งหมด
     rows.push(["", "", "", "", "", "รวมทั้งหมด", sumTotal.toFixed(2)]);
-
-    // 🔹 แปลงเป็น worksheet และเพิ่มเข้า workbook
     const ws = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, ws, name.substring(0, 30));
   });
