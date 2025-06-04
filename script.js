@@ -23,16 +23,11 @@ function getThaiDateString() {
 function addCustomer() {
   const container = document.getElementById("customerContainer");
 
-  const salesOptions = ["NK","SW","TT","KC","KS","MS"]
-    .map(s => `<option value="${s}">${s}</option>`).join("");
-
   const div = document.createElement("div");
   div.className = "customer-section";
 
   div.innerHTML = `
-    <h2>Sale:
-      <select class="sale-select">${salesOptions}</select>
-    </h2>
+    <h2>ลูกค้า</h2>
     <input class="customer-name" placeholder="ชื่อลูกค้า" />
     <input class="customer-note" placeholder="หมายเหตุ" />
     <table>
@@ -51,13 +46,6 @@ function addCustomer() {
         </tr>
       </thead>
       <tbody></tbody>
-      <tfoot>
-        <tr>
-          <td colspan="8" style="text-align:right"><b>ราคารวมทั้งหมด</b></td>
-          <td><input class="total-price" value="0" readonly /></td>
-          <td></td>
-        </tr>
-      </tfoot>
     </table>
     <button onclick="addRow(this)">➕ เพิ่มสินค้า</button>
   `;
@@ -65,10 +53,12 @@ function addCustomer() {
   container.appendChild(div);
   addRow(div.querySelector("button"));
 
-  // ใส่ event listener อัพเดตราคารวมเมื่อข้อมูลเปลี่ยนแปลง
+  // อัพเดตราคารวมทุกครั้งที่มีการเปลี่ยนแปลงข้อมูลลูกค้า
   div.addEventListener("input", () => {
-    updateTotalPrice(div);
+    updateGrandTotal();
   });
+
+  updateGrandTotal();
 }
 
 function addRow(button) {
@@ -79,48 +69,42 @@ function addRow(button) {
     .map(name => `<option value="${name}">${name}</option>`)
     .join("");
 
-  // ค่าเริ่มต้นสินค้าและข้อมูล
   const firstProduct = Object.keys(productList)[0] || "";
   const { price = 0, unit = "" } = productList[firstProduct] || {};
 
   tr.innerHTML = `
     <td>
-      <input type="text" class="product-search" placeholder="ค้นหาสินค้าหรือพิมพ์ชื่อเอง" list="product-list" oninput="onProductInput(this)" />
-      <datalist id="product-list">${options}</datalist>
+      <input list="productList" class="product-input" oninput="onProductInput(this)" placeholder="พิมพ์ชื่อสินค้า" />
+      <datalist id="productList">
+        ${Object.keys(productList).map(name => `<option value="${name}">`).join("")}
+      </datalist>
     </td>
-    <td><input type="number" value="1" min="1" oninput="calcRow(this)" /></td>
+    <td><input type="number" value="1" min="0" oninput="calcRow(this)" /></td>
     <td class="unit-cell">${unit}</td>
-    <td><input type="number" value="0" min="0" max="100" oninput="calcRow(this)" /></td>
-    <td><input type="number" value="0" min="0" max="100" oninput="calcRow(this)" /></td>
-    <td><input type="number" value="0" min="0" max="100" oninput="calcRow(this)" /></td>
-    <td><input type="number" value="${price}" oninput="calcRow(this)" /></td>
+    <td><input type="number" value="0" min="0" oninput="calcRow(this)" /></td>
+    <td><input type="number" value="0" min="0" oninput="calcRow(this)" /></td>
+    <td><input type="number" value="0" min="0" oninput="calcRow(this)" /></td>
+    <td><input type="number" value="${price}" min="0" oninput="calcRow(this)" /></td>
     <td><input type="number" value="${price}" readonly /></td>
     <td><input type="number" value="${price}" readonly /></td>
     <td><button onclick="removeRow(this)">❌</button></td>
   `;
 
   tbody.appendChild(tr);
-  updateProductDetails(tr);
-  updateTotalPrice(button.closest(".customer-section"));
 }
 
 function onProductInput(input) {
-  const val = input.value.trim();
-  const tr = input.closest("tr");
+  const row = input.closest("tr");
+  const productName = input.value;
+  const data = productList[productName];
 
-  if (productList[val]) {
-    // สินค้าใน productList
-    const data = productList[val];
-    tr.cells[2].innerText = data.unit || "";
-    const priceInput = tr.cells[6].querySelector("input");
-    priceInput.value = data.price || 0;
-    priceInput.readOnly = true;
+  if (data) {
+    row.cells[2].innerText = data.unit || "";
+    row.cells[6].querySelector("input").value = data.price || 0;
   } else {
-    // สินค้าใหม่
-    tr.cells[2].innerText = "";
-    const priceInput = tr.cells[6].querySelector("input");
-    priceInput.value = 0;
-    priceInput.readOnly = false;
+    // ถ้าไม่เจอสินค้าใน list ให้เคลียร์หน่วยและราคา
+    row.cells[2].innerText = "";
+    row.cells[6].querySelector("input").value = 0;
   }
   calcRow(input);
 }
@@ -140,29 +124,24 @@ function calcRow(input) {
   row.cells[7].querySelector("input").value = finalPrice.toFixed(2);
   row.cells[8].querySelector("input").value = total.toFixed(2);
 
-  const customerSection = input.closest(".customer-section");
-  updateTotalPrice(customerSection);
+  updateGrandTotal();
 }
 
 function removeRow(btn) {
-  const section = btn.closest(".customer-section");
   btn.closest("tr").remove();
-  updateTotalPrice(section);
+  updateGrandTotal();
 }
 
-function updateTotalPrice(customerSection) {
-  let sum = 0;
-  const rows = customerSection.querySelectorAll("tbody tr");
-  rows.forEach(tr => {
-    const val = parseFloat(tr.cells[8].querySelector("input").value) || 0;
-    sum += val;
+function updateGrandTotal() {
+  let grandTotal = 0;
+  document.querySelectorAll(".customer-section").forEach(section => {
+    const rows = section.querySelectorAll("tbody tr");
+    rows.forEach(tr => {
+      const val = parseFloat(tr.cells[8].querySelector("input").value) || 0;
+      grandTotal += val;
+    });
   });
-  customerSection.querySelector(".total-price").value = sum.toFixed(2);
-}
-
-function updateProductDetails(tr) {
-  const productInput = tr.querySelector(".product-search");
-  if (productInput) onProductInput(productInput);
+  document.getElementById("grandTotalLabel").innerText = grandTotal.toFixed(2);
 }
 
 function downloadXLSX() {
@@ -170,15 +149,15 @@ function downloadXLSX() {
   const dateStr = getThaiDateString();
   const fileName = `ออเดอร์ ${dateStr}.xlsx`;
 
+  const saleName = document.getElementById("saleSelect").value || "";
+
   const customers = document.querySelectorAll(".customer-section");
 
   customers.forEach((section, index) => {
-    const saleName = section.querySelector(".sale-select").value || "";
     const name = section.querySelector(".customer-name").value || `ลูกค้า ${index + 1}`;
     const note = section.querySelector(".customer-note").value || "";
 
     const rows = Array.from(section.querySelectorAll("tbody tr")).map(tr => {
-
       let discounts = [];
       [3,4,5].forEach(i => {
         const v = tr.cells[i].querySelector("input").value;
@@ -197,18 +176,12 @@ function downloadXLSX() {
       };
     });
 
-
     const ws_data = [];
 
-
-    ws_data.push([`Sale: ${saleName}`, `         วันที่ ${dateStr}`]);
-
+    ws_data.push([`Sale: ${saleName}`, `วันที่ ${dateStr}`]);
     ws_data.push([`ลูกค้า: ${name}`]);
-
     ws_data.push([`หมายเหตุ: ${note}`]);
-
     ws_data.push(["สินค้า","จำนวน","หน่วย","ราคาต่อหน่วย","ส่วนลด(%)","ราคาหลังลด","รวม"]);
-
 
     rows.forEach(r => {
       ws_data.push([
@@ -222,9 +195,8 @@ function downloadXLSX() {
       ]);
     });
 
-
-    const total = section.querySelector(".total-price").value || "0";
-    ws_data.push(["", "", "", "", "", "รวมราคาสินค้า", total]);
+    const total = rows.reduce((acc, r) => acc + parseFloat(r["รวม"]) || 0, 0);
+    ws_data.push(["", "", "", "", "", "รวมราคาสินค้า", total.toFixed(2)]);
 
     const ws = XLSX.utils.aoa_to_sheet(ws_data);
     XLSX.utils.book_append_sheet(wb, ws, name.substring(0, 30));
