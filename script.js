@@ -144,7 +144,7 @@ function updateGrandTotal() {
   document.querySelectorAll(".customer-section").forEach(section => {
     let grandTotal = 0;
     section.querySelectorAll("tbody tr").forEach(tr => {
-      total += parseFloat(tr.cells[8].querySelector("input").value) || 0;
+      grandTotal += parseFloat(tr.cells[8].querySelector("input").value) || 0;
     });
     const label = section.querySelector(".customer-total-label");
     if (label) {
