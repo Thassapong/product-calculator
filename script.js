@@ -140,19 +140,20 @@ function removeRow(btn) {
   updateGrandTotal();
 }
 
+
 function updateGrandTotal() {
-  let grandTotal = 0;
   document.querySelectorAll(".customer-section").forEach(section => {
+    let grandTotal = 0;
     const rows = section.querySelectorAll("tbody tr");
     rows.forEach(tr => {
       const val = parseFloat(tr.cells[8].querySelector("input").value) || 0;
       grandTotal += val;
     });
-  });
     const label = section.querySelector(".customer-total-label");
     if (label) {
       label.innerText = `ราคารวมลูกค้า: ${grandTotal.toFixed(2)} บาท`;
     }
+  });
 }
 
 function downloadXLSX() {
