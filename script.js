@@ -140,14 +140,11 @@ function removeRow(btn) {
   updateGrandTotal();
 }
 
-
 function updateGrandTotal() {
   document.querySelectorAll(".customer-section").forEach(section => {
     let grandTotal = 0;
-    const rows = section.querySelectorAll("tbody tr");
-    rows.forEach(tr => {
-      const val = parseFloat(tr.cells[8].querySelector("input").value) || 0;
-      grandTotal += val;
+    section.querySelectorAll("tbody tr").forEach(tr => {
+      total += parseFloat(tr.cells[8].querySelector("input").value) || 0;
     });
     const label = section.querySelector(".customer-total-label");
     if (label) {
