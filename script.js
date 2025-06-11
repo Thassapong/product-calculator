@@ -46,8 +46,15 @@ function addCustomer() {
         </tr>
       </thead>
       <tbody></tbody>
+      <tfoot>
+      <tr>
+        <td colspan="9" style="text-align: right; font-weight: bold;">
+          <span class="customer-total-label">ราคารวมลูกค้า: 0.00 บาท</span>
+        </td>
+        <td></td>
+      </tr>
+    </tfoot>
     </table>
-    <p><strong>ราคารวมทั้งหมด: <span id="grandTotalLabel">0.00</span> บาท</strong></p>
     <button onclick="addRow(this)">➕ เพิ่มสินค้า</button>
   `;
 
@@ -142,7 +149,10 @@ function updateGrandTotal() {
       grandTotal += val;
     });
   });
-  document.getElementById("grandTotalLabel").innerText = grandTotal.toFixed(2);
+    const label = section.querySelector(".customer-total-label");
+    if (label) {
+      label.innerText = `ราคารวมลูกค้า: ${grandTotal.toFixed(2)} บาท`;
+    }
 }
 
 function downloadXLSX() {
